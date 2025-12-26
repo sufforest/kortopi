@@ -1,0 +1,19 @@
+name = "kortopi"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+[vars]
+# ------------------------------------------------------------------------------
+# Configuration (Non-Sensitive)
+# ------------------------------------------------------------------------------
+
+# Whitelist: Comma-separated User IDs (e.g. "123456, 789012")
+ALLOWED_USERS = ""
+
+# Whitelist: Comma-separated Group IDs (e.g. "-100123...")
+ALLOWED_GROUPS = ""
+
+# Optional: Forward private messages to this Group ID
+TARGET_GROUP_ID = ""
+
+# Note: Set 'BOT_TOKEN' via `npx wrangler secret put BOT_TOKEN`
