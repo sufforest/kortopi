@@ -39,6 +39,10 @@ export const config: CleanerConfig = {
         'tiktok.com': {
             mode: 'blacklist',
             params: ['share_token', 'smid', '_d', 'tt_from', 'u_code', 'iid', 'did']
+        },
+        'zhihu.com': {
+            mode: 'whitelist',
+            params: [] // Remove ALL parameters
         }
     }
 };
