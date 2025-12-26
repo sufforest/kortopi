@@ -29,9 +29,8 @@ export const config: CleanerConfig = {
             params: ['p', 't', 'bvid', 'aid', 'cid'] // Only keep video ID, page, timestamp
         },
         'xiaohongshu.com': {
-            mode: 'blacklist',
-            params: ['xhsshare', 'appuid', 'apptime', 'share_id', 'source']
-            // Note: xsec_token and xsec_source are intentionally NOT here to prevent breakage
+            mode: 'whitelist',
+            params: ['xsec_token']
         },
         'douyin.com': {
             mode: 'blacklist',
