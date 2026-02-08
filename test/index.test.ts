@@ -114,8 +114,9 @@ describe('POST /webhook', () => {
         // Check sendMessage
         const sendCall = vi.mocked(global.fetch).mock.calls.find(c => (c[0] as string).includes('sendMessage'));
         const sendBody = JSON.parse(sendCall[1].body as string);
-        expect(sendBody.text).toContain('Test User (@testuser):'); // Sender Name
+        expect(sendBody.text).toContain('<b><a href="tg://user?id=123">Test User (@testuser)</a></b>:'); // Bold Sender Name + Link
         expect(sendBody.text).toContain('Look: https://www.bilibili.com/video/BV1');
+        expect(sendBody.parse_mode).toBe('HTML');
 
         // Check deleteMessage
         const deleteCall = vi.mocked(global.fetch).mock.calls.find(c => (c[0] as string).includes('deleteMessage'));

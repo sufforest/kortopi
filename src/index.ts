@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { extractUrls, unshorten, clean } from './cleaner';
-import { TelegramUpdate, sendMessage, deleteMessage } from './telegram';
+import { TelegramUpdate, sendMessage, deleteMessage, escapeHtml } from './telegram';
 
 type Bindings = {
     ALLOWED_USERS: string;
@@ -83,8 +83,15 @@ app.post('/webhook', async (c) => {
             // Post to target group
             const targetGroup = env.TARGET_GROUP_ID;
             if (targetGroup) {
-                const senderName = [from.first_name, from.last_name].filter(Boolean).join(' ') + (from.username ? ` (@${from.username})` : '');
-                await sendMessage(env.BOT_TOKEN, targetGroup, `Forwarded from ${senderName}:\n\n${newText}`);
+                const safeFirstName = escapeHtml(from.first_name);
+                const safeLastName = from.last_name ? escapeHtml(from.last_name) : '';
+                const safeUsername = from.username ? escapeHtml(from.username) : '';
+
+                const displayName = [safeFirstName, safeLastName].filter(Boolean).join(' ') + (safeUsername ? ` (@${safeUsername})` : '');
+                // Bold + Link to user profile
+                const boldSenderName = `<b><a href="tg://user?id=${from.id}">${displayName}</a></b>`;
+
+                await sendMessage(env.BOT_TOKEN, targetGroup, `Forwarded from ${boldSenderName}:\n\n${escapeHtml(newText)}`, undefined, 'HTML');
                 await sendMessage(env.BOT_TOKEN, chat.id, `Processed and sent to group.`);
             } else {
                 // If no target group configured, just reply to user
@@ -92,10 +99,16 @@ app.post('/webhook', async (c) => {
             }
         } else if (isGroup) {
             // Reply in group: "User shared [links]" and delete original
-            const senderName = [from.first_name, from.last_name].filter(Boolean).join(' ') + (from.username ? ` (@${from.username})` : '');
-            const replyText = `${senderName}:\n${newText}`;
+            const safeFirstName = escapeHtml(from.first_name);
+            const safeLastName = from.last_name ? escapeHtml(from.last_name) : '';
+            const safeUsername = from.username ? escapeHtml(from.username) : '';
 
-            await sendMessage(env.BOT_TOKEN, chat.id, replyText);
+            const displayName = [safeFirstName, safeLastName].filter(Boolean).join(' ') + (safeUsername ? ` (@${safeUsername})` : '');
+            const boldSenderName = `<b><a href="tg://user?id=${from.id}">${displayName}</a></b>`;
+
+            const replyText = `${boldSenderName}:\n${escapeHtml(newText)}`;
+
+            await sendMessage(env.BOT_TOKEN, chat.id, replyText, undefined, 'HTML');
 
             // Try to delete original message
             await deleteMessage(env.BOT_TOKEN, chat.id, message.message_id).catch(e => console.error('Failed to delete message', e));

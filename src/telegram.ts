@@ -35,12 +35,12 @@ export interface TelegramMessageEntity {
     url?: string;
 }
 
-export async function sendMessage(token: string, chatId: number | string, text: string, replyToMessageId?: number) {
+export async function sendMessage(token: string, chatId: number | string, text: string, replyToMessageId?: number, parseMode: 'Markdown' | 'HTML' | undefined = 'HTML') {
     const url = `https://api.telegram.org/bot${token}/sendMessage`;
     const body: any = {
         chat_id: chatId,
         text: text,
-        // parse_mode: 'Markdown', // Optional, can enable if needed for formatting
+        parse_mode: parseMode,
     };
 
     if (replyToMessageId) {
@@ -54,6 +54,15 @@ export async function sendMessage(token: string, chatId: number | string, text: 
     });
 
     return resp.json();
+}
+
+export function escapeHtml(text: string): string {
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 
 /**
