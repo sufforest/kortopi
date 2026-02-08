@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { extractUrls, unshorten, clean } from './cleaner';
-import { TelegramUpdate, sendMessage, forwardCleanLinkToGroup, deleteMessage } from './telegram';
+import { TelegramUpdate, sendMessage, deleteMessage } from './telegram';
 
 type Bindings = {
     ALLOWED_USERS: string;
@@ -54,34 +54,46 @@ app.post('/webhook', async (c) => {
             return c.json({ ok: true });
         }
 
-        const cleanLinks: string[] = [];
-        for (const url of rawUrls) {
-            const expanded = await unshorten(url);
-            const cleaned = clean(expanded);
-            // Only add if it's different or just explicitly valid (for now just add all processed)
-            cleanLinks.push(cleaned);
+        let newText = text;
+        let modified = false;
+
+        // Sort by length desc to avoid replacement collisions
+        const uniqueRawUrls = [...new Set(rawUrls)].sort((a, b) => b.length - a.length);
+
+        for (const url of uniqueRawUrls) {
+            try {
+                const expanded = await unshorten(url);
+                const cleaned = clean(expanded);
+
+                if (cleaned !== url) {
+                    newText = newText.replaceAll(url, cleaned);
+                    modified = true;
+                }
+            } catch (e) {
+                console.error(`Error processing URL ${url}:`, e);
+            }
         }
 
-        // Remove duplicates
-        const uniqueLinks = [...new Set(cleanLinks)];
-        if (uniqueLinks.length === 0) return c.json({ ok: true });
+        if (!modified) {
+            return c.json({ ok: true });
+        }
 
         // 3. Action based on Chat Type
         if (isPrivate) {
             // Post to target group
             const targetGroup = env.TARGET_GROUP_ID;
             if (targetGroup) {
-                await forwardCleanLinkToGroup(env.BOT_TOKEN, targetGroup, from, uniqueLinks);
-                // Optionally confirm to user?
-                await sendMessage(env.BOT_TOKEN, chat.id, `Processed ${uniqueLinks.length} links and sent to group.`);
+                const senderName = [from.first_name, from.last_name].filter(Boolean).join(' ') + (from.username ? ` (@${from.username})` : '');
+                await sendMessage(env.BOT_TOKEN, targetGroup, `Forwarded from ${senderName}:\n\n${newText}`);
+                await sendMessage(env.BOT_TOKEN, chat.id, `Processed and sent to group.`);
             } else {
                 // If no target group configured, just reply to user
-                await sendMessage(env.BOT_TOKEN, chat.id, uniqueLinks.join('\n\n'));
+                await sendMessage(env.BOT_TOKEN, chat.id, newText);
             }
         } else if (isGroup) {
             // Reply in group: "User shared [links]" and delete original
-            const senderName = from.username ? `@${from.username}` : from.first_name;
-            const replyText = `${senderName} shared links:\n\n${uniqueLinks.join('\n\n')}`;
+            const senderName = [from.first_name, from.last_name].filter(Boolean).join(' ') + (from.username ? ` (@${from.username})` : '');
+            const replyText = `${senderName}:\n${newText}`;
 
             await sendMessage(env.BOT_TOKEN, chat.id, replyText);
 

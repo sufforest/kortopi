@@ -82,5 +82,6 @@ export function clean(url: string): string {
 
 export function extractUrls(text: string): string[] {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
-    return text.match(urlRegex) || [];
+    const matches = text.match(urlRegex) || [];
+    return matches.map(url => url.replace(/[.,;?!]+$/, ''));
 }
