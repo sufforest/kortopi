@@ -67,7 +67,7 @@ describe('clean', () => {
 
 describe('unshorten', () => {
     it('resolves redirects', async () => {
-        const originalFetch = global.fetch;
+        const originalFetch = globalThis.fetch;
 
         // Mock fetch to return a sequence of responses
         // First call: 301 Redirect to long-url
@@ -84,7 +84,7 @@ describe('unshorten', () => {
                 text: () => Promise.resolve(''),
             } as unknown as Response);
 
-        global.fetch = mockFetch;
+        globalThis.fetch = mockFetch;
 
         const result = await unshorten('https://short.com/xyz');
         expect(result).toBe('https://long-url.com/');
@@ -92,16 +92,16 @@ describe('unshorten', () => {
         expect(mockFetch).toHaveBeenNthCalledWith(1, 'https://short.com/xyz', expect.any(Object));
         expect(mockFetch).toHaveBeenNthCalledWith(2, 'https://long-url.com/', expect.any(Object));
 
-        global.fetch = originalFetch;
+        globalThis.fetch = originalFetch;
     });
 
     it('returns original if fetch fails', async () => {
-        const originalFetch = global.fetch;
-        global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
+        const originalFetch = globalThis.fetch;
+        globalThis.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
 
         const result = await unshorten('https://short.com/fail');
         expect(result).toBe('https://short.com/fail');
 
-        global.fetch = originalFetch;
+        globalThis.fetch = originalFetch;
     });
 });

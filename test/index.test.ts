@@ -43,7 +43,7 @@ describe('POST /webhook', () => {
     };
 
     // Mock fetch for sendMessage/deleteMessage
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => ({ ok: true, result: {} }),
     } as unknown as Response);
@@ -51,7 +51,7 @@ describe('POST /webhook', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // Reset default implementation
-        global.fetch = vi.fn().mockResolvedValue({
+        globalThis.fetch = vi.fn().mockResolvedValue({
             ok: true,
             json: async () => ({ ok: true, result: {} }),
         } as unknown as Response);
@@ -65,7 +65,7 @@ describe('POST /webhook', () => {
 
         expect(res.status).toBe(200);
         expect(await res.json()).toEqual({ ok: true });
-        expect(global.fetch).not.toHaveBeenCalled();
+        expect(globalThis.fetch).not.toHaveBeenCalled();
     });
 
     it('replaces links in private chat', async () => {
@@ -84,10 +84,10 @@ describe('POST /webhook', () => {
         expect(res.status).toBe(200);
 
         // Should send message back
-        expect(global.fetch).toHaveBeenCalledTimes(1);
-        const callArgs = vi.mocked(global.fetch).mock.calls[0];
+        expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+        const callArgs = vi.mocked(globalThis.fetch).mock.calls[0]!;
         const url = callArgs[0] as string;
-        const body = JSON.parse(callArgs[1].body as string);
+        const body = JSON.parse(callArgs[1]!.body as string);
 
         expect(url).toContain('/sendMessage');
         expect(body.chat_id).toBe(123);
@@ -109,18 +109,18 @@ describe('POST /webhook', () => {
         expect(res.status).toBe(200);
 
         // Should call sendMessage AND deleteMessage
-        expect(global.fetch).toHaveBeenCalledTimes(2);
+        expect(globalThis.fetch).toHaveBeenCalledTimes(2);
 
         // Check sendMessage
-        const sendCall = vi.mocked(global.fetch).mock.calls.find(c => (c[0] as string).includes('sendMessage'));
-        const sendBody = JSON.parse(sendCall[1].body as string);
+        const sendCall = vi.mocked(globalThis.fetch).mock.calls.find(c => (c[0] as string).includes('sendMessage'))!;
+        const sendBody = JSON.parse(sendCall[1]!.body as string);
         expect(sendBody.text).toContain('<b><a href="tg://user?id=123">Test User (@testuser)</a></b>:'); // Bold Sender Name + Link
         expect(sendBody.text).toContain('Look: https://www.bilibili.com/video/BV1');
         expect(sendBody.parse_mode).toBe('HTML');
 
         // Check deleteMessage
-        const deleteCall = vi.mocked(global.fetch).mock.calls.find(c => (c[0] as string).includes('deleteMessage'));
-        const deleteBody = JSON.parse(deleteCall[1].body as string);
+        const deleteCall = vi.mocked(globalThis.fetch).mock.calls.find(c => (c[0] as string).includes('deleteMessage'))!;
+        const deleteBody = JSON.parse(deleteCall[1]!.body as string);
         expect(deleteBody.message_id).toBe(100);
     });
 
@@ -136,8 +136,8 @@ describe('POST /webhook', () => {
             body: JSON.stringify(createUpdate(text2)),
         }, mockEnv);
 
-        const call = vi.mocked(global.fetch).mock.calls[0];
-        const body = JSON.parse(call[1].body as string);
+        const call = vi.mocked(globalThis.fetch).mock.calls[0]!;
+        const body = JSON.parse(call[1]!.body as string);
 
         expect(body.text).toContain('V1: https://www.bilibili.com/v/1');
         expect(body.text).not.toContain('?spm=');
